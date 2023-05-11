@@ -3,17 +3,15 @@ from datetime import date, timedelta
 from dataclasses import dataclass
 from typing import List
 
-class Persister:
-    pass
-
     
 class Cryptographer:
     
     def __init__(self, secret_key):
         self.secret_key = secret_key
     
-    def encrypt(self, plain_text) -> str:
-        return plain_text
+    def encrypt(self, plain_text: str) -> str:
+        #TODO: Actually encrypt the string
+        return plain_text.swapcase()
     
     def compare(self, plain_text, encrypted_text) -> str:
         pass
@@ -47,19 +45,72 @@ class Token:
         
 class AuthenticationTokenHandler:
     def generate_token(self, user: User) -> Token:
+        #TODO: Actually make a token
         return Token(f"{user.email}_123456789", date.today() + timedelta(days=180))
     
         
 class UserPerstance:
     
-    def get_user(self, email) -> User:
-        pass
-
-    def get_tokens(self, email, password) -> List[Token]:
-        pass
+    #TODO: Actually store things in a database
+    #TODO: Encrypt data before it is put into the database and decrypt it after
     
-    def add_user(self, user:User):
-        pass
+    def __init__(self):
+        self.user_map = {}
+    
+    def user_is_known(self, email):
+        return email in self.user_map
+    
+    def user_has_token(self, email, token) -> bool:
+        if self.user_is_known(email):
+            user_struct = self.user_map[email]
+            tokens = user_struct['tokens']
+            return token in tokens
+        
+        return False
+        
+    def get_user(self, email) -> User:
+        if self.user_is_known(email):
+            user_struct = self.user_map[email]
+            user = user_struct['user']
+            return user
+        
+        return None
+
+    def get_tokens(self, email) -> List[Token]:
+        if self.user_is_known(email):
+            user_struct = self.user_map[email]
+            tokens = user_struct['tokens']
+            return tokens
+        
+        return []
+    
+    def clear_tokens(self, email):
+        
+        if self.user_is_known(email):
+            user_struct = self.user_map[email]
+            user_struct['tokens'] = []
+        
+    
+    def update_user(self, email, user):
+        if self.user_is_known(email):
+            user_struct = self.user_map[email]
+            user_struct['user'] = user
+    
+    def remove_user(self, email):
+        del self.user_map[email]
+    
+    def add_user(self, user: User) -> bool:
+        
+        if not self.user_is_known(user.email):
+            self.user_map[user.email] = {
+                'user': user,
+                'tokens': []
+            }
+            
+            return True
+        
+        return False
+    
 
 class UserService:
     def __init__(self, crypto, token_factory, persistance):
@@ -70,7 +121,10 @@ class UserService:
     def create_user(self, first_name, last_name, email, password) -> User:
         encrypted_pass = crypto.encrypt(password)
         user = User(first_name, last_name, email, encrypted_pass)
-        return user
+        if (self.persistance.add_user(user)):
+            return user
+        else:
+            return None
         
     
     def get_new_token(self, user) -> Token:
@@ -84,7 +138,7 @@ class UserService:
 
 app = Flask(__name__)
 
-persister = Persister()
+persister = UserPerstance()
 crypto = Cryptographer('SECRET_TUNNEL')
 authenticator = AuthenticationTokenHandler()
 user_service = UserService(crypto, authenticator, persister)
@@ -95,10 +149,14 @@ def create_user():
     request_data = request.json
     
     user = user_service.create_user(**request_data)
-    token = user_service.get_new_token(user)
+    if user is not None:
+        token = user_service.get_new_token(user)
+        
+        response_payload = token.to_json()
+        return response_payload, 200
     
-    response_payload = token.to_json()
-    return response_payload, 200
+    else:
+        return {}, 409
 
 
 @app.route('/users/verify', methods=['POST'])

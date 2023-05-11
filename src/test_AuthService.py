@@ -36,24 +36,24 @@ def test_emails_must_be_unique():
     response = client.post('/users/new', json={
         'first_name': 'duckey',
         'last_name': 'beaver',
-        'email': 'duckey@olivesToys.com'
+        'email': 'chickum@olivesToys.com',
+        'password': 'mollyAndOliveAreBuddies'
     })
     
     required_keys = ['expires_on', 'token']
     assert all([x in response.json for x in required_keys])
-    token = response.json[token]
     assert response.status_code == 200
     
     response = client.post('/users/new', json={
         'first_name': 'Daddy',
         'last_name': 'Dolphin',
-        'email': 'duckey@olivesToys.com',
+        'email': 'chickum@olivesToys.com',
         'password': 'mollyAndOliveAreBuddies'
     })
     
     assert response.status_code == 409
     required_keys = ['expires_on', 'token']
-    assert all([x not in response.json for x in required_keys])
+    assert not any([x in response.json for x in required_keys])
     
     
 
