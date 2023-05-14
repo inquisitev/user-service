@@ -211,6 +211,27 @@ def test_get_info_of_a_user_that_exists():
         'last_name': 'beaver',
         'email': 'duckey@olivesToys.com'
     }
+    
+
+def test_get_info_for_user_that_exists_but_authentication_fails():
+    client = app.test_client()
+    
+    client.post('/users/new', json={
+        'first_name': 'duckey',
+        'last_name': 'beaver',
+        'email': 'duckey@olivesToys.com',
+        'password': 'mollyAndOliveNOTAreBuddies'
+    })
+    
+    response = client.post('/users/user_info', json={
+        'email': 'duckey@olivesToys.com',
+        'token': "INCORRECT_TOKEN"
+    })
+    
+    assert response.status_code == 409
+    assert response.json == {
+        'message': 'Incorrect credentials.',
+    }
 
 def test_a_user_can_change_email_if_authenticated():
     pass

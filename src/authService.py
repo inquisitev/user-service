@@ -13,9 +13,6 @@ class Cryptographer:
         #TODO: Actually encrypt the string
         return plain_text.swapcase()
     
-    def compare(self, plain_text, encrypted_text) -> str:
-        pass
-
 @dataclass
 class User:
     first_name: str
@@ -75,28 +72,12 @@ class UserPerstance:
             return tokens
         
         return []
-    
-    def clear_tokens(self, email):
-        if self.user_is_known(email):
-            user_struct = self.user_map[email]
-            user_struct['tokens'] = []
-        
-    
-    def update_user(self, email, user):
-        if self.user_is_known(email):
-            user_struct = self.user_map[email]
-            user_struct['user'] = user
-    
-    def remove_user(self, email):
-        del self.user_map[email]
-        
         
     def add_token_to_user(self, email, token) -> bool:
         user = self.get_user(email)
         if user is not None:
             self.user_map[email]['tokens'].append(token)
             return True
-        return False
     
     def add_user(self, user: User) -> bool:
         if not self.user_is_known(user.email):
@@ -143,12 +124,6 @@ class UserService:
         token = self.token_factory.generate_token(user)
         self.persistance.add_token_to_user(user.email, token)
         return token
-    
-    def clear_tokens(self, email, password) -> bool:
-        user = self.persistance.get_user(email)
-        encrypted_pass = self.crypto.encrypt(password)
-        if (user.encrypted_pass == encrypted_pass):
-            return self.persistance.clear_tokens(email)
 
     def verify_token(self, email, token) -> bool:
         tokens = self.persistance.get_tokens(email)
