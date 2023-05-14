@@ -59,14 +59,6 @@ class UserPerstance:
     
     def user_is_known(self, email):
         return email in self.user_map
-    
-    def user_has_token(self, email, token) -> bool:
-        if self.user_is_known(email):
-            user_struct = self.user_map[email]
-            tokens = user_struct['tokens']
-            return token in tokens
-        
-        return False
         
     def get_user(self, email) -> User:
         if self.user_is_known(email):
@@ -85,7 +77,6 @@ class UserPerstance:
         return []
     
     def clear_tokens(self, email):
-        
         if self.user_is_known(email):
             user_struct = self.user_map[email]
             user_struct['tokens'] = []
@@ -98,9 +89,16 @@ class UserPerstance:
     
     def remove_user(self, email):
         del self.user_map[email]
+        
+        
+    def add_token_to_user(self, email, token) -> bool:
+        user = self.get_user(email)
+        if user is not None:
+            self.user_map[email]['tokens'].append(token)
+            return True
+        return False
     
     def add_user(self, user: User) -> bool:
-        
         if not self.user_is_known(user.email):
             self.user_map[user.email] = {
                 'user': user,
@@ -108,7 +106,6 @@ class UserPerstance:
             }
             
             return True
-        
         return False
     
 
@@ -126,15 +123,36 @@ class UserService:
         else:
             return None
         
+    def get_user(self, email):
+        return self.persistance.get_user(email)
+        
+    def user_does_exist(self, email) -> bool:
+        return self.persistance.get_user(email) is not None
+        
+    def authenticate_user(self, email, password=None, token=None) -> Token:
+        user  = self.persistance.get_user(email)
+        if user is not None:
+            encrypted_pass = crypto.encrypt(password)
+            if user.encrypted_pass == encrypted_pass:
+                new_token = self.get_new_token(user)
+                return new_token
+        
+        return None
     
     def get_new_token(self, user) -> Token:
-        return self.token_factory.generate_token(user)
+        token = self.token_factory.generate_token(user)
+        self.persistance.add_token_to_user(user.email, token)
+        return token
     
     def clear_tokens(self, email, password) -> bool:
-        pass
+        user = self.persistance.get_user(email)
+        encrypted_pass = self.crypto.encrypt(password)
+        if (user.encrypted_pass == encrypted_pass):
+            return self.persistance.clear_tokens(email)
 
     def verify_token(self, email, token) -> bool:
-        pass
+        tokens = self.persistance.get_tokens(email)
+        return any([token == ctoken.token for ctoken in tokens])
 
 app = Flask(__name__)
 
@@ -142,6 +160,7 @@ persister = UserPerstance()
 crypto = Cryptographer('SECRET_TUNNEL')
 authenticator = AuthenticationTokenHandler()
 user_service = UserService(crypto, authenticator, persister)
+
 
 @app.route('/users/new', methods=['POST'])
 def create_user():
@@ -151,18 +170,58 @@ def create_user():
     user = user_service.create_user(**request_data)
     if user is not None:
         token = user_service.get_new_token(user)
-        
         response_payload = token.to_json()
         return response_payload, 200
     
     else:
-        return {}, 409
+        return {'message': "An account with that email already exists."}, 409
 
 
 @app.route('/users/verify', methods=['POST'])
 def verify_user():
     
-    
-    response_payload = {}
+    request_data = request.json
+    verified = user_service.verify_token(**request_data)
+    response_payload = {
+        'verified': verified
+    }
     
     return response_payload, 200
+
+
+@app.route('/users/login', methods=['POST'])
+def authenticate_user():
+    
+    request_data = request.json
+    if not user_service.user_does_exist(request_data['email']):
+        message = {"message": "There is no account with that email."}
+        return message, 409
+    else:
+        new_token = user_service.authenticate_user(**request_data)
+
+        if new_token is not None:
+            return new_token.to_json(), 200
+        else:
+            message = {"message": "Incorrect credentials."}
+            return message, 409
+        
+
+@app.route('/users/user_info', methods=['POST'])
+def lookup_user():
+    
+    request_data = request.json
+    email = request_data['email']
+    if not user_service.user_does_exist(email):
+        message = {"message": "There is no account with that email."}
+        return message, 409
+    else:
+        verified = user_service.verify_token(**request_data)
+
+        if verified:
+            user = user_service.get_user(email)
+            return user.to_json(), 200
+        else:
+            message = {"message": "Incorrect credentials."}
+            return message, 409
+            
+
