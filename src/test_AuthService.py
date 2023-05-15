@@ -1,10 +1,9 @@
-import json
 import pytest
 from src.authService import app, persister
-from datetime import date, timedelta
 
 
-# must clear the user map so that adding the same test user multiple times doesnt break the test suite
+# must clear the user map so that adding the same test user multiple times doesnt break 
+# the test suite
 @pytest.fixture(autouse=True)
 def reset_test_env():
     persister.user_map.clear()
@@ -34,7 +33,7 @@ def test_adding_a_user():
     )
 
     assert response.status_code == 200
-    assert response.json["verified"] == True
+    assert response.json["verified"] is True
 
 
 # test that a wrong token will not verify
@@ -53,7 +52,6 @@ def test_a_incorrect_token_will_not_verify():
 
     required_keys = ["expires_on", "token"]
     assert all([x in response.json for x in required_keys])
-    token = response.json["token"]
     assert response.status_code == 200
 
     response = client.post(
@@ -62,7 +60,7 @@ def test_a_incorrect_token_will_not_verify():
     )
 
     assert response.status_code == 200
-    assert response.json["verified"] == False
+    assert response.json["verified"] is False
 
 
 # test that a wrong token will not verify
@@ -96,10 +94,11 @@ def test_a_different_users_token_will_not_verify():
     )
 
     assert response.status_code == 200
-    assert response.json["verified"] == False
+    assert response.json["verified"] is False
 
 
-# test that when adding a new user, if the email is already registered, then do not provide auth token
+# test that when adding a new user, if the email is already registered, then do not 
+# provide auth token
 def test_emails_must_be_unique():
     client = app.test_client()
 
