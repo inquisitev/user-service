@@ -35,7 +35,6 @@ def test_adding_a_user():
     assert response.status_code == 200
     assert response.json["verified"] is True
 
-
 # test that a wrong token will not verify
 def test_a_incorrect_token_will_not_verify():
     client = app.test_client()
