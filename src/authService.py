@@ -13,8 +13,6 @@ class Cryptographer:
         return plain_text.swapcase()
 
 
-
-
 @dataclass
 class User:
     first_name: str
@@ -52,10 +50,26 @@ class UserPerstance:
     def __init__(self):
         self.user_map = {}
 
-    def user_is_known(self, email):
+    def user_is_known(self, email: str) -> bool:
+        """Check if the user is known in this persistent storage apparatus
+
+        Args:
+            email (str): the email of the user
+
+        Returns:
+            bool: true if the user is known
+        """
         return email in self.user_map
 
-    def get_user(self, email) -> User:
+    def get_user(self, email: str) -> User:
+        """get the user with the associated email, if possible
+
+        Args:
+            email (str): the email of the user
+
+        Returns:
+            User: the user with the email address, if theyre known.
+        """
         if self.user_is_known(email):
             user_struct = self.user_map[email]
             user = user_struct["user"]
@@ -63,7 +77,15 @@ class UserPerstance:
 
         return None
 
-    def get_tokens(self, email) -> List[Token]:
+    def get_tokens(self, email: str) -> List[Token]:
+        """get all of the tokens for the user with the email address
+
+        Args:
+            email (str): the email of the user
+
+        Returns:
+            List[Token]: the tokens registered to the user
+        """
         if self.user_is_known(email):
             user_struct = self.user_map[email]
             tokens = user_struct["tokens"]
@@ -71,16 +93,32 @@ class UserPerstance:
 
         return []
 
-    def add_token_to_user(self, email, token) -> bool:
+    def add_token_to_user(self, email: str, token: str) -> bool:
+        """Save a token to the user with email
+
+        Args:
+            email (str): the email of the user
+            token (str): the token to save
+
+        Returns:
+            bool: true if successfully saved
+        """
         user = self.get_user(email)
         if user is not None:
             self.user_map[email]["tokens"].append(token)
             return True
 
     def add_user(self, user: User) -> bool:
+        """add a user to the persistent storage apparatus
+
+        Args:
+            user (User): the user to save
+
+        Returns:
+            bool: true if successfully saved
+        """
         if not self.user_is_known(user.email):
             self.user_map[user.email] = {"user": user, "tokens": []}
-
             return True
         return False
 
@@ -91,7 +129,21 @@ class UserService:
         self.token_factory = token_factory
         self.persistance = persistance
 
-    def create_user(self, first_name, last_name, email, password) -> User:
+    def create_user(
+        self, first_name: str, last_name: str, email: str, password: str
+    ) -> User:
+        """Create a user
+
+        Args:
+            first_name (str): The first name of the user
+            last_name (str): The last name of the user
+            email (str): The email of the user
+            password (str): The password of the user
+
+        Returns:
+            User: The details of the user that has been added, excluding password.
+            if the user has not been added for some reason, return None
+        """
         encrypted_pass = crypto.encrypt(password)
         user = User(first_name, last_name, email, encrypted_pass)
         if self.persistance.add_user(user):
@@ -99,13 +151,41 @@ class UserService:
         else:
             return None
 
-    def get_user(self, email):
+    def get_user(self, email: str) -> User:
+        """Get the user with the email from persistent storage
+
+        Args:
+            email (str): the email of the user
+
+        Returns:
+            User: the User with the email address, None if retrieved from persistent storage as None
+        """
         return self.persistance.get_user(email)
 
-    def user_does_exist(self, email) -> bool:
+    def user_does_exist(self, email: str) -> bool:
+        """Check if the user with email exists
+
+        Args:
+            email (str): the email of the user
+
+        Returns:
+            bool: true if the user exists
+        """
         return self.persistance.get_user(email) is not None
 
-    def authenticate_user(self, email, password=None, token=None) -> Token:
+    def authenticate_user(self, email: str, password: str) -> Token:
+        """Generate a new token for a user provided that
+        they have supplied correct credentials
+
+        Args:
+            email (str): the email of the user
+            password (str): the plaintext password that will
+                be verified against the stored encrypted password
+
+        Returns:
+            Token: The new authentication token attached to the user
+                with the email
+        """
         user = self.persistance.get_user(email)
         if user is not None:
             encrypted_pass = crypto.encrypt(password)
@@ -115,12 +195,29 @@ class UserService:
 
         return None
 
-    def get_new_token(self, user) -> Token:
+    def get_new_token(self, user: User) -> Token:
+        """Get a new token for the user
+
+        Args:
+            user (User): the user to create a new token for.
+
+        Returns:
+            Token: the new token used for authentication. 
+        """
         token = self.token_factory.generate_token(user)
         self.persistance.add_token_to_user(user.email, token)
         return token
 
-    def verify_token(self, email, token) -> bool:
+    def verify_token(self, email: str, token: Token) -> bool:
+        """Verify an authenitcation token with what is known already
+
+        Args:
+            email (str): the email of the user
+            token (str): the token to attempt verification with
+
+        Returns:
+            bool: true if verification successful
+        """
         tokens = self.persistance.get_tokens(email)
         return any([token == ctoken.token for ctoken in tokens])
 
