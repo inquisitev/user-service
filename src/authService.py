@@ -1,16 +1,25 @@
 from flask import Flask, request
 from datetime import date, timedelta
 from dataclasses import dataclass
-from typing import List
-
+from typing import List, Tuple
+import hashlib
+import hmac
+import os
 
 class Cryptographer:
     def __init__(self, secret_key):
         self.secret_key = secret_key
 
-    def encrypt(self, plain_text: str) -> str:
-        # TODO: Actually encrypt the string
-        return plain_text.swapcase()
+    def secure_pw(self, plain_text: str) -> Tuple[bytes, bytes]:
+        salt = os.urandom(16)
+        pw_hash = hashlib.pbkdf2_hmac('sha256', plain_text.encode(), salt, 100000)
+        return salt, pw_hash
+    
+    def check_pw(self, plain_text, hashed_pw, salt):
+        return hmac.compare_digest(
+            hashed_pw,
+            hashlib.pbkdf2_hmac('sha256', plain_text.encode(), salt, 100000)
+        )
 
 
 @dataclass
@@ -18,7 +27,8 @@ class User:
     first_name: str
     last_name: str
     email: str
-    encrypted_pass: str
+    encrypted_pass: bytes
+    salt: bytes
 
     def to_json(self):
         return {
@@ -45,7 +55,7 @@ class AuthenticationTokenHandler:
 
 class UserPerstance:
     # TODO: Actually store things in a database
-    # TODO: Encrypt data before it is put into the database and decrypt it after
+    # TODO: secure_pw data before it is put into the database and decrypt it after
 
     def __init__(self):
         self.user_map = {}
@@ -144,8 +154,8 @@ class UserService:
             User: The details of the user that has been added, excluding password.
             if the user has not been added for some reason, return None
         """
-        encrypted_pass = crypto.encrypt(password)
-        user = User(first_name, last_name, email, encrypted_pass)
+        salt, encrypted_pass = crypto.secure_pw(password)
+        user = User(first_name, last_name, email, encrypted_pass, salt)
         if self.persistance.add_user(user):
             return user
         else:
@@ -188,8 +198,8 @@ class UserService:
         """
         user = self.persistance.get_user(email)
         if user is not None:
-            encrypted_pass = crypto.encrypt(password)
-            if user.encrypted_pass == encrypted_pass:
+            pw_is_correct = crypto.check_pw(password, user.encrypted_pass, user.salt)
+            if pw_is_correct:
                 new_token = self.get_new_token(user)
                 return new_token
 

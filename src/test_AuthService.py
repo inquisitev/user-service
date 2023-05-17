@@ -2,7 +2,7 @@ import pytest
 from src.authService import app, persister
 
 
-# must clear the user map so that adding the same test user multiple times doesnt break 
+# must clear the user map so that adding the same test user multiple times doesnt break
 # the test suite
 @pytest.fixture(autouse=True)
 def reset_test_env():
@@ -34,6 +34,7 @@ def test_adding_a_user():
 
     assert response.status_code == 200
     assert response.json["verified"] is True
+
 
 # test that a wrong token will not verify
 def test_a_incorrect_token_will_not_verify():
@@ -96,7 +97,7 @@ def test_a_different_users_token_will_not_verify():
     assert response.json["verified"] is False
 
 
-# test that when adding a new user, if the email is already registered, then do not 
+# test that when adding a new user, if the email is already registered, then do not
 # provide auth token
 def test_emails_must_be_unique():
     client = app.test_client()
