@@ -5,7 +5,8 @@ from typing import List, Tuple
 import hashlib
 import hmac
 import os
-import secrets, string
+import secrets
+import string
 
 class Cryptographer:
     def __init__(self, secret_key):
@@ -175,7 +176,8 @@ class UserService:
             email (str): the email of the user
 
         Returns:
-            User: the User with the email address, None if retrieved from persistent storage as None
+            User: the User with the email address, None if 
+            retrieved from persistent storage as None
         """
         return self.persistance.get_user(email)
 
