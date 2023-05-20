@@ -8,4 +8,3 @@ pyjwt==2.1.0
 SQLAlchemy==1.4.22
 Werkzeug==2.0.1
 black
-py-bcrypt

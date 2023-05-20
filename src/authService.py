@@ -5,6 +5,7 @@ from typing import List, Tuple
 import hashlib
 import hmac
 import os
+import secrets, string
 
 class Cryptographer:
     def __init__(self, secret_key):
@@ -20,6 +21,12 @@ class Cryptographer:
             hashed_pw,
             hashlib.pbkdf2_hmac('sha256', plain_text.encode(), salt, 100000)
         )
+        
+def generate_api_key(length=32):
+    alphabet = string.ascii_letters + string.digits
+    api_key = ''.join(secrets.choice(alphabet) for _ in range(length))
+    return api_key
+
 
 
 @dataclass
@@ -50,7 +57,7 @@ class Token:
 class AuthenticationTokenHandler:
     def generate_token(self, user: User) -> Token:
         # TODO: Actually make a token
-        return Token(f"{user.email}_123456789", date.today() + timedelta(days=180))
+        return Token(generate_api_key(), date.today() + timedelta(days=180))
 
 
 class UserPerstance:
@@ -239,6 +246,10 @@ crypto = Cryptographer("SECRET_TUNNEL")
 authenticator = AuthenticationTokenHandler()
 user_service = UserService(crypto, authenticator, persister)
 
+
+@app.route("/", methods=["GET"])
+def index():
+    return {}, 200
 
 @app.route("/users/new", methods=["POST"])
 def create_user():
