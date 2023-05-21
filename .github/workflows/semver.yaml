@@ -34,7 +34,7 @@ jobs:
 
       - run: echo ${{ steps.checkTag.outputs.exists }}
       - name: Check version
-        if: ${{ steps.checkTag.outputs.exists }} == true
+        if: ${{ steps.checkTag.outputs.exists }}
         uses: actions/github-script@v3
         with:
           script: |
