@@ -1,5 +1,5 @@
 
-name: Verify semver compliance and publish new tag
+name: Verify semver compliance
 
 on:
   pull_request:

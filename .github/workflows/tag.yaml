@@ -1,5 +1,5 @@
 
-name: Verify semver compliance and publish new tag
+name: publish new tag
 
 on:
   push:
