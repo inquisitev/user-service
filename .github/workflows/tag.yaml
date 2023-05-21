@@ -17,10 +17,19 @@ jobs:
       packages: write
 
     steps:
+    
       - uses: actions/checkout@v3
+
+      - name: Set variables
+        run: |
+          VER=$(cat VERSION)
+          echo "VERSION=$VER" >> $GITHUB_ENV
+
+
+      - run: echo ${{ steps.checkTag.outputs.exists }}
       - uses: rickstaa/action-create-tag@v1
         id: "tag_create"
         with:
-          tag: ${{ cat VERSION }}
-          message: "Release for $(cat VERSION)"
+          tag: 'v${{ env.VERSION }}'
+          message: "Release for v${{ env.VERSION }}"
 
