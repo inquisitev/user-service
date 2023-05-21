@@ -28,10 +28,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set variables
-        run: |
-          VER=$(cat VERSION)
-          echo "VERSION=$VER" >> $GITHUB_ENV
 
       - name: Log in to the Container registry
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
@@ -40,6 +36,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set variables
+        run: |
+          VER=$(cat VERSION)
+          echo "VERSION=$VER" >> $GITHUB_ENV
+          
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v4
