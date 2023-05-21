@@ -20,16 +20,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+
       - name: Set variables
+        run: |
+          VER=$(cat VERSION)
+          echo "VERSION=$VER" >> $GITHUB_ENV
+
+      - name: check tag exists
         uses: mukunku/tag-exists-action@v1.2.0
         id: checkTag
         with: 
-          tag: 'tag-to-search-for'
+          tag: 'v${{ env.VERSION }}'
 
       - run: echo ${{ steps.checkTag.outputs.exists }}
-
-      if: !${{ steps.checkTag.outputs.exists }}
-      uses: actions/github-script@v3
-      with:
-        script: |
-            core.setFailed('A tag for that version already exists, Update the version in accordance with semver')
+      - name: Check version
+        if: !${{ steps.checkTag.outputs.exists }}
+        uses: actions/github-script@v3
+        with:
+          script: |
+              core.setFailed('A tag for that version already exists, Update the version in accordance with semver')
