@@ -2,7 +2,7 @@
 name: Verify semver compliance and publish new tag
 
 on:
-  push:
+  pull_request:
     branches: ['main']
 
 env:
@@ -39,3 +39,11 @@ jobs:
         with:
           script: |
               core.setFailed('A tag for that version already exists, Update the version in accordance with semver')
+
+      - name: Publish new tag
+          if: ${{ steps.checkTag.outputs.exists }} == false
+          uses: rickstaa/action-create-tag@v1
+            id: "tag_create"
+            with:
+              tag: 'v${{ env.VERSION }}'
+              message: 'v${{ env.VERSION }}'
