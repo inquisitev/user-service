@@ -35,4 +35,4 @@ jobs:
       - run: echo ${{ steps.checkTag.outputs.exists }}
 
       - name: Check version
-        run: if ${{ steps.checkTag.outputs.exists }} then echo "Must update version in accordance with semver" && exit 1 fi
+        run: if ${{ steps.checkTag.outputs.exists }}; then echo "Must update version in accordance with semver" && exit 1; fi
