@@ -33,10 +33,6 @@ jobs:
           tag: 'v${{ env.VERSION }}'
 
       - run: echo ${{ steps.checkTag.outputs.exists }}
-      - name: Check version
-        if: ${{ steps.checkTag.outputs.exists }}
-        uses: actions/github-script@v3
-        with:
-          script: |
-              core.setFailed('A tag for that version already exists, Update the version in accordance with semver')
 
+      - name: Check version
+        run: if ${{ steps.checkTag.outputs.exists }}; then echo "Must update version in accordance with semver" && exit 1; fi
