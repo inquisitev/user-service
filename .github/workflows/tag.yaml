@@ -21,6 +21,6 @@ jobs:
       - uses: rickstaa/action-create-tag@v1
         id: "tag_create"
         with:
-          tag: $(cat VERSION)
+          tag: ${{ $(cat VERSION) }}
           message: "Release for $(cat VERSION)"
 
