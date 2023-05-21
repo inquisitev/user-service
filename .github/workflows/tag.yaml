@@ -17,25 +17,10 @@ jobs:
       packages: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-
-      - name: Set variables
-        run: |
-          VER=$(cat VERSION)
-          echo "VERSION=$VER" >> $GITHUB_ENV
-
-      - name: check tag exists
-        uses: mukunku/tag-exists-action@v1.2.0
-        id: checkTag
-        with: 
-          tag: 'v${{ env.VERSION }}'
-
-      - name: Publish new tag
-        if: ${{ steps.checkTag.outputs.exists }} != true
-        uses: rickstaa/action-create-tag@v1
+      - uses: actions/checkout@v3
+      - uses: rickstaa/action-create-tag@v1
         id: "tag_create"
         with:
-          tag: 'v${{ env.VERSION }}'
-          message: 'v${{ env.VERSION }}'
+          tag: $(cat VERSION)
+          message: "Release for $(cat VERSION)"
+
