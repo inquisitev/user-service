@@ -1,8 +1,8 @@
 
-name: Verify semver compliance
+name: publish new tag
 
 on:
-  pull_request:
+  push:
     branches: ['main']
 
 env:
@@ -32,7 +32,10 @@ jobs:
         with: 
           tag: 'v${{ env.VERSION }}'
 
-      - run: echo ${{ steps.checkTag.outputs.exists }}
-
-      - name: Check version
-        run: if ${{ steps.checkTag.outputs.exists }}; then echo "Must update version in accordance with semver" && exit 1; fi
+      - name: Publish new tag
+        if: ${{ steps.checkTag.outputs.exists }} != true
+        uses: rickstaa/action-create-tag@v1
+        id: "tag_create"
+        with:
+          tag: 'v${{ env.VERSION }}'
+          message: 'v${{ env.VERSION }}'
